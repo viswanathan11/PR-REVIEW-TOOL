@@ -1,4 +1,4 @@
-# AI GitHub Code Reviewer — Step-by-Step Build Guide
+# AI GitHub Code Reviewer
 
 > Hell-mode learning project. Full-stack. No shortcuts explained away.
 > Spring Boot · PostgreSQL · Redis · GitHub Webhooks · Anthropic AI · Next.js
