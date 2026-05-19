@@ -1,6 +1,6 @@
 CREATE TABLE pull_requests(
     id BIGSERIAL PRIMARY KEY,
-    repository_id BIGINT NOT NULL REFERENCES repositories(id) ON DELETE CASACDE,
+    repository_id BIGINT NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
     pr_number INTEGER NOT NULL,
     title TEXT,
     author VARCHAR(100),

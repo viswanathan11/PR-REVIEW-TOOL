@@ -9,7 +9,7 @@ CREATE TABLE repositories (
     webhook_active BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id,github_repo_id)
-)
+);
 
 CREATE INDEX idx_repository_user_id ON repositories(user_id);
 

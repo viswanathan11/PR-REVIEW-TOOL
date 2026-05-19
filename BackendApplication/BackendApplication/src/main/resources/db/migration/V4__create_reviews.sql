@@ -3,7 +3,7 @@ CREATE TYPE review_status AS ENUM('PENDING','PROCESSING','DONE','FAILED');
 
 CREATE TABLE reviews(
     id          BIGSERIAL PRIMARY KEY,
-    pull_request_id     BIGiNT NOT NULL REFERENCES pull_requests(id) ON DELETE CASCADE,
+    pull_request_id     BIGINT NOT NULL REFERENCES pull_requests(id) ON DELETE CASCADE,
     status              review_status NOT NULL DEFAULT 'PENDING',
     model_used          VARCHAR(100),
     review_summary      TEXT,
@@ -22,7 +22,7 @@ CREATE TABLE review_comments(
     file_path   TEXT NOT NULL,
     line_number INTEGER,
     severity    VARCHAR(20) NOT NULL,
-    commment    TEXT NOT NULL,
+    comment    TEXT NOT NULL,
     suggestion  TEXT,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
