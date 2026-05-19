@@ -1,1 +1,20 @@
 Plane.md
+
+# ─── Secrets (NEVER commit these) ───
+.env
+*.env
+
+# ─── Build artifacts ───
+target/
+*.class
+node_modules/
+.next/
+
+# ─── IDE ───
+.vscode/
+.idea/
+*.iml
+
+# ─── OS ───
+.DS_Store
+*:Zone.Identifier
