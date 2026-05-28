@@ -37,7 +37,7 @@ public class AppProperties {
             return expiryHours;
         }
 
-        public void setExpiryHourse(int expiryHours){
+        public void setExpiryHours(int expiryHours){
             this.expiryHours=expiryHours;
         }
 
@@ -59,7 +59,7 @@ public class AppProperties {
     public static class Ai{
         private String anthropicApiKey;
         private String model;
-        private int maxToken;
+        private int maxTokens;
         private long maxDiffChars;
 
         public String getAnthropicApiKey(){
@@ -78,12 +78,12 @@ public class AppProperties {
             this.model=model;
         }
 
-        public int getMaxToken(){
-            return maxToken;
+        public int getMaxTokens(){
+            return maxTokens;
         }
 
-        public void setMaxToken(int maxToken){
-            this.maxToken=maxToken;
+        public void setMaxTokens(int maxTokens){
+            this.maxTokens=maxTokens;
         }
 
         public long getMaxDiffChars(){
@@ -96,8 +96,7 @@ public class AppProperties {
     }
     // ==========================================
     // 2. Getters and Setters for Parent Class
-    // ==========================================
-
+    // =========================================
     public String getBaseUrl(){
         return baseUrl;
     }
