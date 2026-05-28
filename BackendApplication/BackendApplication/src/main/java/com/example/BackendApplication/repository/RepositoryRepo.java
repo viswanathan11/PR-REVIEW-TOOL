@@ -10,7 +10,7 @@ import com.example.BackendApplication.model.Repository;
 public interface RepositoryRepo extends JpaRepository<Repository, Long> {
     List<Repository> findByUserId(Long userId);
 
-    Optional<Repository> findByUserIdGitHubRepoId(Long userId, String githubRepoId);
+    Optional<Repository> findByUserIdAndGithubRepoId(Long userId, String githubRepoId);
 
     Optional<Repository> findByFullName(String fullName);
 }

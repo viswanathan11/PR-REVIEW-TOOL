@@ -4,7 +4,7 @@
 ## Your backend API will be at http://localhost:8080
 ## ──────────────────────────────────────────────
 server:
-  port: 8080
+  port: 8081
 
 spring:
   application:
@@ -85,7 +85,7 @@ spring:
 ## You'll create an AppProperties.java class to read these.
 ## ──────────────────────────────────────────────
 app:
-  base-url: ${APP_BASE_URL:http://localhost:8080}
+  base-url: ${APP_BASE_URL:http://localhost:8081}
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
   jwt:
     secret: ${JWT_SECRET}

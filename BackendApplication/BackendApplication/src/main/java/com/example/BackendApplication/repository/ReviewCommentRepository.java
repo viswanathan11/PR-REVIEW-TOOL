@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.example.BackendApplication.model.ReviewComment;
 
 public interface ReviewCommentRepository extends JpaRepository<ReviewComment, Long> {
-    List<ReviewComment> finbyReviewId(Long reviewId);
+    List<ReviewComment> findByReviewId(Long reviewId);
 }
