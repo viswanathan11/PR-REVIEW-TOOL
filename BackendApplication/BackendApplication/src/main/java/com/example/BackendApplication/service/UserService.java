@@ -2,11 +2,13 @@ package com.example.BackendApplication.service;
 
 import java.time.Instant;
 
+import org.springframework.stereotype.Service;
+
 import com.example.BackendApplication.model.User;
 import com.example.BackendApplication.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
-
+@Service
 public class UserService {
     
     private final UserRepository userRepository;
@@ -40,6 +42,7 @@ public class UserService {
             newUser.setAvatarUrl(avatarUrl);
             newUser.setAccessToken(accessToken);
             newUser.setCreatedAt(Instant.now());
+            newUser.setUpdatedAt(Instant.now());
             return userRepository.save(newUser);
         });
     }

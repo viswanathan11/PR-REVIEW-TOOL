@@ -38,7 +38,7 @@ public class JwtService {
     //String generate (): This function Gnerates a token signed with our key carrying the UserId(subject) 
     // and Github Login
 
-    public String gnerate(Long userId,String githubLogin){
+    public String generate(Long userId,String githubLogin){
         long nowMs=System.currentTimeMillis();
         long expiryMs=nowMs+(props.getJwt().getExpiryHours() * 3600_00L);
 
