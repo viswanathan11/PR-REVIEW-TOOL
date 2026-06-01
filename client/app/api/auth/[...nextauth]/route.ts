@@ -16,7 +16,7 @@ export const authOptions: NextAuthOptions = {
             //--admin:repo_hook -> allow our app to register hooks for pr changes
 
             authorization: {
-                params: { scope: "read:user repo adming:repo_hook" },
+                params: { scope: "read:user repo admin:repo_hook" },
             },
         }),
     ],
