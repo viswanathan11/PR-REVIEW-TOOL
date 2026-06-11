@@ -82,8 +82,19 @@ public class SecurityConfig {
                     var user = userService.findOrCreate(githubId, login, avatarUrl, accessToken);
                     String jwt = jwtService.generate(user.getId(), user.getGithubLogin());
 
+
+                    //Create the HttpOnly Cookie
+                    jakarta.servlet.http.Cookie cookie=new jakarta.servlet.http.Cookie("token", jwt);
+                    cookie.setHttpOnly(true);
+                    cookie.setSecure(false);// !!! we neeed to change this true in prudctions (HTTPs only)
+                    cookie.setPath("/");
+                    cookie.setMaxAge(props.getJwt().getExpiryHours() * 36000);//Matching the token expiry
+
+                    //Add the cokkie to the HTTP response
+                    response.addCookie(cookie);
+
                     response.sendRedirect(props.getFrontendUrl() + "/auth/callback?token=" + jwt);
-                })) 
+                }))
             
             // 6. Register our custom JWT verification filter
             .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
