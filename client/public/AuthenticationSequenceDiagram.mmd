@@ -1,0 +1,21 @@
+sequenceDiagram
+    actor User as User Browser
+    participant FE as Frontend (Port 3000)
+    participant BE as Backend (Port 8080)
+    participant GH as GitHub OAuth Server
+
+    User->>FE: Clicks "Sign in with GitHub"
+    FE->>User: Redirects to backend:<br/>http://localhost:8080/oauth2/authorization/github
+    User->>BE: GET /oauth2/authorization/github
+    BE->>User: Redirects (302) to GitHub login page with Client ID & Scopes
+    User->>GH: User enters GitHub credentials & approves app
+    GH->>User: Redirects (302) back to backend with temp 'code'
+    User->>BE: GET /login/oauth2/code/github?code=XYZ
+    BE->>GH: Exchanges 'code' + Client Secret for GitHub Access Token (Server-to-Server)
+    GH->>BE: Returns GitHub Access Token
+    BE->>BE: Saves user info & GitHub Token in Postgres database
+    BE->>BE: Generates our custom app JWT token
+    BE->>User: Redirects (302) to Frontend Auth Callback:<br/>http://localhost:3000/auth/callback?token=JWT
+    User->>FE: Load Auth Callback Page
+    FE->>FE: Save JWT token (LocalStorage/Cookie)
+    FE->>User: Redirects to /dashboard
