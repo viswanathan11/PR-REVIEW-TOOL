@@ -1,6 +1,5 @@
 package com.example.BackendApplication.controller;
 
-import org.apache.catalina.connector.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +29,6 @@ public class AuthController {
 
         cookie.setHttpOnly(true);
         cookie.setSecure( false);//True in production
-
         cookie.setPath("/");
         cookie.setMaxAge(0);//Tells browser to delte this cookie immedidately!
 

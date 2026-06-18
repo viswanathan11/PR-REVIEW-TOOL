@@ -28,7 +28,7 @@ public class UserService {
 
         return userRepository.findByGithubId(githubId)
         .map(existing -> {
-            existing.setGithubId(login);
+            existing.setGithubLogin(login);
             existing.setAvatarUrl(avatarUrl);
             existing.setAccessToken(accessToken);
             existing.setUpdatedAt(Instant.now());
