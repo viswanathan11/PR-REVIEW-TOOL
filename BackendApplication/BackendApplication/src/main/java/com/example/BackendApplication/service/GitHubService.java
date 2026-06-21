@@ -1,4 +1,5 @@
 package com.example.BackendApplication.service;
+
 /*
 This provides method to communicate directly with github using the users's personal 
 OAuth2 aacess_token
@@ -23,11 +24,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.BackendApplication.config.AppProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+@Service
 public class GitHubService {
 
     private static final Logger log = LoggerFactory.getLogger(GitHubService.class);
