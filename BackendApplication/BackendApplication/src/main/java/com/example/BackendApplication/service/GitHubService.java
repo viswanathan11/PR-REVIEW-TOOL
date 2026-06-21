@@ -56,15 +56,35 @@ public class GitHubService {
 
     }
 
-    @SuppressWarnings("unchecked")
+       @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getUserRepositories(String token) {
-        ResponseEntity<List> response = restTemplate.exchange(
-                "http://api.github.com/user/repos?per_page=100&sort=updated", HttpMethod.GET,
+        try {
+            System.out.println("[DEBUG-SERVICE] Calling GitHub user repos API...");
+            ResponseEntity<String> response = restTemplate.exchange(
+                "https://api.github.com/user/repos?per_page=100&sort=updated",
+                HttpMethod.GET,
                 new HttpEntity<>(headers(token)),
-                List.class);
-
-        return (List<Map<String, Object>>) response.getBody();
+                String.class
+            );
+            
+            System.out.println("[DEBUG-SERVICE] HTTP Status: " + response.getStatusCode());
+            System.out.println("[DEBUG-SERVICE] Headers: " + response.getHeaders());
+            System.out.println("[DEBUG-SERVICE] Raw Body Length: " + (response.getBody() != null ? response.getBody().length() : "null"));
+            
+            if (response.getBody() != null) {
+                // Manually parse JSON string into a List of Maps
+                return objectMapper.readValue(
+                    response.getBody(), 
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Map.class)
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("[DEBUG-SERVICE] Error inside getUserRepositories: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
     }
+
 
     @SuppressWarnings("unchecked")
     public String registerWebhook(String repoFullName, String token) {
