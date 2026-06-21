@@ -51,7 +51,7 @@ public class SecurityConfig {
         http
                 // 1. Disable CSRF for external GitHub webhooks
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/webhooks/**"))
+                        .ignoringRequestMatchers("/api/**"))
 
                 // 2. Apply our CORS configurations
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))

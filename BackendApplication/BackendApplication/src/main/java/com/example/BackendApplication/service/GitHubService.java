@@ -51,7 +51,7 @@ public class GitHubService {
         h.setBearerAuth(token);
         h.setContentType(MediaType.APPLICATION_JSON);
         h.set("Accept", "application/vnd.github.v3+json");
-         h.set("User-Agent", "AI-PR-Reviewer-App");
+        h.set("User-Agent", "AI-PR-Reviewer-App");
         return h;
 
     }
@@ -99,14 +99,14 @@ public class GitHubService {
                         "secret", props.getWebhook().getSecret()));
 
         ResponseEntity<Map> response = restTemplate.postForEntity(
-                "https://api/github.com/repos/" + repoFullName + "/hooks",
-                new HttpEntity<>(headers(token)),
+                "https://api.github.com/repos/" + repoFullName + "/hooks",
+                new HttpEntity<>(body,headers(token)),
                 Map.class);
 
         return response.getBody().get("id").toString();
     }
 
-    public void delteWebhook(String repoFullName, String webhookId, String token) {
+    public void deleteWebhook(String repoFullName, String webhookId, String token) {
         restTemplate.exchange("https://api.github.com/repos/" + repoFullName + "/hooks/" + webhookId,
                 HttpMethod.DELETE,
                 new HttpEntity<>(headers(token)),
