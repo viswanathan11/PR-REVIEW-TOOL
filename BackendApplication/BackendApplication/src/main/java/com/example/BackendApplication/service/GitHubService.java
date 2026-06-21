@@ -51,6 +51,7 @@ public class GitHubService {
         h.setBearerAuth(token);
         h.setContentType(MediaType.APPLICATION_JSON);
         h.set("Accept", "application/vnd.github.v3+json");
+         h.set("User-Agent", "AI-PR-Reviewer-App");
         return h;
 
     }
