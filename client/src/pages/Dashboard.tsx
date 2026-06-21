@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+import { Activity, AlertCircle, LayoutDashboard, Loader2, LogOut, Power, RefreshCw, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, LayoutDashboard, Search, RefreshCw, Activity, Power, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "../App";
 import {
-  getTrackedRepositories,
-  getGitHubRepositories,
-  trackRepository,
-  enableWebhook,
   disableWebhook,
-  type Repository,
-  type GithubRepo
+  enableWebhook,
+  getGitHubRepositories,
+  getTrackedRepositories,
+  trackRepository,
+  type GithubRepo,
+  type Repository
 } from "../lib/api";
 
 export default function Dashboard() {
@@ -36,7 +36,8 @@ export default function Dashboard() {
       setGithubRepos(github);
     } catch (err: any) {
       console.error("Error fetching dashboard data:", err);
-      setError("Failed to connect to backend server. Make sure the backend is running.");
+      // Change this line to display the real error message:
+      setError(`Failed to load data: ${err.message || err}`);
     } finally {
       setLoading(false);
     }
