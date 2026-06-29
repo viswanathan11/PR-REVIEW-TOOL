@@ -113,7 +113,6 @@ public class ReviewJobService {
             review = new Review();
             review.setPullRequest(pr);
             review.setStatus(ReviewStatus.PROCESSING);
-            review.setModelUsed("claude-3-5-sonnet"); // Using standard string representation
             review.setModelUsed("claude-3-5-sonnet");
             review.setCreatedAt(Instant.now());
             review = reviewRepository.save(review);

@@ -21,6 +21,7 @@ public class PullRequest {
     private Long id;
 
     // Many pull requests belong to one Repository
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "repository_id", nullable = false)
     private Repository repository;
