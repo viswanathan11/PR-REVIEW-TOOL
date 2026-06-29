@@ -35,6 +35,18 @@ export interface ReviewComment {
     comment: string;
     suggestion: string | null;
 }
+export interface PullRequest {
+    id: number;
+    prNumber: number;
+    title: string;
+    author: string;
+    baseBranch: string;
+    headBranch: string;
+    headSha: string;
+    state: string;
+    githubUrl: string;
+    createdAt: string;
+}
 
 // 1. Fetch tracked repositories from database
 export async function getTrackedRepositories(): Promise<Repository[]> {
@@ -100,5 +112,13 @@ export async function getReviewComments(prId: number): Promise<ReviewComment[]> 
         credentials: "include",
     });
     if (!res.ok) throw new Error("Failed to fetch review comments");
+    return res.json();
+}
+
+export async function getRepoPullRequests(repoId: number): Promise<PullRequest[]> {
+    const res = await fetch(`${API_URL}/api/reviews/repo/${repoId}`, {
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error("Failed to fetch PR list");
     return res.json();
 }

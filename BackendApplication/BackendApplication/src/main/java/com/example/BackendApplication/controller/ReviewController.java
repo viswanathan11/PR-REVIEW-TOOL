@@ -30,6 +30,11 @@ public class ReviewController {
         this.prRepository = prRepository;
     }
 
+    @GetMapping("/repo/{repoId}")
+    public ResponseEntity<List<PullRequest>> getPullRequestsForRepo(@PathVariable Long repoId) {
+        return ResponseEntity.ok(prRepository.findByRepositoryId(repoId));
+    }
+    
     @GetMapping("/{prId}")
     @Cacheable(value = "pr-reviews", key = "#prId")
     public ResponseEntity<Review> getReview(@PathVariable Long prId) {
