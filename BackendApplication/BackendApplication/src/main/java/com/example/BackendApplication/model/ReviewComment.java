@@ -21,6 +21,7 @@ public class ReviewComment {
     private Long id;
 
     // Many comments belong to One review
+   @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "review_id", nullable = false)
     private Review review;

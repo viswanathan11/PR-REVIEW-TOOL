@@ -24,10 +24,11 @@ public class Review {
     private Long id;
 
     // Many reviews belong to One pull request
+@com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pull_request_id", nullable = false)
     private PullRequest pullRequest;
-
+    
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, columnDefinition = "review_status")
     private ReviewStatus status;
