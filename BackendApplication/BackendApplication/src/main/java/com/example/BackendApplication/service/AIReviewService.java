@@ -60,30 +60,36 @@ public class AIReviewService {
 
     public ReviewResultDTO analyzeCode(String diff) {
         Map<String, Object> requestBody = Map.of(
-            "model",      props.getAi().getModel(),
-            "max_tokens", props.getAi().getMaxTokens(),
-            "system",     SYSTEM_PROMPT,
-            "messages",   List.of(Map.of(
-                "role",    "user",
-                "content", "Review this pull request diff:\n\n```diff\n" + diff + "\n```"
-            ))
+            "contents", List.of(Map.of(
+                "role", "user",
+                "parts", List.of(Map.of(
+                    "text", "Review this pull request diff:\n\n```diff\n" + diff + "\n```"
+                ))
+            )),
+            "systemInstruction", Map.of(
+                "parts", List.of(Map.of(
+                    "text", SYSTEM_PROMPT
+                ))
+            ),
+            "generationConfig", Map.of(
+                "responseMimeType", "application/json"
+            )
         );
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("x-api-key", props.getAi().getAnthropicApiKey());
-        headers.set("anthropic-version", "2023-06-01");
         headers.setContentType(MediaType.APPLICATION_JSON);
 
+        // Call Google Gemini API
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" 
+            + props.getAi().getGeminiApiKey();
+
         ResponseEntity<Map> response = restTemplate.postForEntity(
-            "https://api.anthropic.com/v1/messages",
+            url,
             new HttpEntity<>(requestBody, headers),
             Map.class
         );
 
         String jsonText = extractContent(response.getBody());
-        
-        // Strip any accidental markdown blocks that the LLM might have returned
-        jsonText = jsonText.replaceAll("```json\\s*", "").replaceAll("```\\s*", "").trim();
 
         try {
             return objectMapper.readValue(jsonText, ReviewResultDTO.class);
@@ -95,15 +101,26 @@ public class AIReviewService {
 
     @SuppressWarnings("unchecked")
     private String extractContent(Map<String, Object> response) {
-        if (response == null || !response.containsKey("content")) {
-            throw new RuntimeException("Empty response body from Anthropic API");
+        if (response == null || !response.containsKey("candidates")) {
+            throw new RuntimeException("Empty response body from Gemini API");
         }
         
-        List<Map<String, Object>> content = (List<Map<String, Object>>) response.get("content");
-        return content.stream()
-            .filter(c -> "text".equals(c.get("type")))
-            .map(c -> (String) c.get("text"))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("No text in AI response"));
+        List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+        if (candidates == null || candidates.isEmpty()) {
+            throw new RuntimeException("No candidates returned from Gemini API");
+        }
+        
+        Map<String, Object> firstCandidate = candidates.get(0);
+        Map<String, Object> content = (Map<String, Object>) firstCandidate.get("content");
+        if (content == null || !content.containsKey("parts")) {
+            throw new RuntimeException("No content parts in Gemini response");
+        }
+        
+        List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+        if (parts == null || parts.isEmpty()) {
+            throw new RuntimeException("No parts returned in Gemini candidate content");
+        }
+        
+        return (String) parts.get(0).get("text");
     }
 }

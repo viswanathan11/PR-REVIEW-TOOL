@@ -57,17 +57,17 @@ public class AppProperties {
     }
 
     public static class Ai{
-        private String anthropicApiKey;
+        private String geminiApiKey;
         private String model;
         private int maxTokens;
         private long maxDiffChars;
 
-        public String getAnthropicApiKey(){
-            return anthropicApiKey;
+        public String getGeminiApiKey(){
+            return geminiApiKey;
         }
 
-        public void setAnthropicApiKey(String anthropicApiKey){
-            this.anthropicApiKey=anthropicApiKey;
+        public void setGeminiApiKey(String geminiApiKey){
+            this.geminiApiKey=geminiApiKey;
         }
 
         public String getModel(){

@@ -25,6 +25,19 @@ services:
     volumes:
       - redisdata:/data
 
+  nginx:
+    image: nginx:alpine
+    container_name: reviewer_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - postgres
+      - redis
+
 volumes:
   pgdata:
   redisdata:
