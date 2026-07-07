@@ -1203,3 +1203,8 @@ java.io.StreamCorruptedException: invalid type code: 00
 2026-07-07T08:33:02.004Z  INFO 49371 --- [BackendApplication] [http-nio-8081-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
 2026-07-07T08:33:02.005Z  INFO 49371 --- [BackendApplication] [http-nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
 2026-07-07T08:33:02.006Z  INFO 49371 --- [BackendApplication] [http-nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-07-07T08:38:42.797Z  INFO 49371 --- [BackendApplication] [SpringApplicationShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-07-07T08:38:42.806Z  INFO 49371 --- [BackendApplication] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-07-07T08:38:42.823Z  INFO 49371 --- [BackendApplication] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-07-07T08:38:42.825Z  INFO 49371 --- [BackendApplication] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown initiated...
+2026-07-07T08:38:42.827Z  INFO 49371 --- [BackendApplication] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown completed.
