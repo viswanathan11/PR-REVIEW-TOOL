@@ -1,9 +1,12 @@
 package com.example.BackendApplication.service;
 
-import com.example.BackendApplication.dto.ReviewResultDTO;
-import com.example.BackendApplication.dto.WebhookPayloadDTO;
-import com.example.BackendApplication.model.*;
-import com.example.BackendApplication.repository.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -11,11 +14,17 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.example.BackendApplication.dto.ReviewResultDTO;
+import com.example.BackendApplication.dto.WebhookPayloadDTO;
+import com.example.BackendApplication.model.PullRequest;
+import com.example.BackendApplication.model.Repository;
+import com.example.BackendApplication.model.Review;
+import com.example.BackendApplication.model.ReviewComment;
+import com.example.BackendApplication.model.ReviewStatus;
+import com.example.BackendApplication.repository.PullRequestRepository;
+import com.example.BackendApplication.repository.RepositoryRepo;
+import com.example.BackendApplication.repository.ReviewCommentRepository;
+import com.example.BackendApplication.repository.ReviewRepository;
 
 @Service
 public class ReviewJobService {
@@ -110,6 +119,7 @@ public class ReviewJobService {
             pr = prRepository.save(pr);
 
             // 5. Initialize Review record with PROCESSING status
+            deleteExistingReviewIfExists(pr.getId());
             review = new Review();
             review.setPullRequest(pr);
             review.setStatus(ReviewStatus.PROCESSING);
@@ -252,17 +262,7 @@ public class ReviewJobService {
 
         Review review = null;
         try {
-            Optional<Review> lastReview = reviewRepository
-                .findFirstByPullRequestIdAndStatusOrderByCreatedAtDesc(pr.getId(), ReviewStatus.DONE);
-            if (lastReview.isPresent()) {
-                Review prevReview = lastReview.get();
-                if (prevReview.getPullRequest().getHeadSha().equals(incomingSha)) {
-                    log.info("PR {}/#{} already reviewed for commit SHA: {}. Skipping duplicate review.", 
-                        repoFullName, prNumber, incomingSha);
-                    return;
-                }
-            }
-
+            deleteExistingReviewIfExists(pr.getId());
             review = new Review();
             review.setPullRequest(pr);
             review.setStatus(ReviewStatus.PROCESSING);
@@ -355,5 +355,14 @@ public class ReviewJobService {
             "_Reviewed by [AI Code Reviewer](https://github.com)_",
             score, issues, result.getSummary()
         );
+    }
+
+    private void deleteExistingReviewIfExists(Long prId) {
+        reviewRepository.findByPullRequestId(prId).ifPresent(existingReview -> {
+            List<ReviewComment> commentsToDelete = commentRepository.findByReviewId(existingReview.getId());
+            commentRepository.deleteAll(commentsToDelete);
+            reviewRepository.delete(existingReview);
+            reviewRepository.flush();
+        });
     }
 }

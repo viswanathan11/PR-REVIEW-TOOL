@@ -5,7 +5,7 @@ const BACKEND_URL = 'http://127.0.0.1:8081';
 const FRONTEND_URL = 'http://127.0.0.1:5173';
 
 const server = http.createServer((req, res) => {
-    const isBackend = req.url.startsWith('/api/') || req.url.startsWith('/oauth2/') || req.url.startsWith('/login');
+    const isBackend = req.url.startsWith('/api/') || req.url.startsWith('/oauth2/') || req.url.startsWith('/login/oauth2/');
     const targetBase = isBackend ? BACKEND_URL : FRONTEND_URL;
     const targetUrl = new URL(req.url, targetBase);
 
@@ -36,7 +36,7 @@ const server = http.createServer((req, res) => {
 
 // Support WebSocket forwarding for Vite Hot Module Replacement (HMR)
 server.on('upgrade', (req, socket, head) => {
-    const isBackend = req.url.startsWith('/api/') || req.url.startsWith('/oauth2/') || req.url.startsWith('/login');
+    const isBackend = req.url.startsWith('/api/') || req.url.startsWith('/oauth2/') || req.url.startsWith('/login/oauth2/');
     const port = isBackend ? 8081 : 5173;
     
     const targetSocket = net.connect(port, '127.0.0.1', () => {

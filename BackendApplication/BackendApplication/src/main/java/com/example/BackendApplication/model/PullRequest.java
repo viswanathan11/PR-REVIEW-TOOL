@@ -56,6 +56,9 @@ public class PullRequest {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @jakarta.persistence.Transient
+    private String reviewStatus;
+
     public PullRequest() {
 
     }
@@ -171,6 +174,14 @@ public class PullRequest {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getReviewStatus() {
+        return reviewStatus;
+    }
+
+    public void setReviewStatus(String reviewStatus) {
+        this.reviewStatus = reviewStatus;
     }
 
 }

@@ -32,11 +32,12 @@ public class ReviewController {
 
     @GetMapping("/repo/{repoId}")
     public ResponseEntity<List<PullRequest>> getPullRequestsForRepo(@PathVariable Long repoId) {
-        return ResponseEntity.ok(prRepository.findByRepositoryId(repoId));
+        List<PullRequest> prs = prRepository.findByRepositoryId(repoId);
+        populateReviewStatus(prs);
+        return ResponseEntity.ok(prs);
     }
     
     @GetMapping("/{prId}")
-    @Cacheable(value = "pr-reviews", key = "#prId")
     public ResponseEntity<Review> getReview(@PathVariable Long prId) {
         return reviewRepository.findByPullRequestId(prId)
             .map(ResponseEntity::ok)
@@ -51,10 +52,44 @@ public class ReviewController {
     }
 
     @PostMapping("/{prId}/trigger")
-    public ResponseEntity<Map<String, String>> triggerReview(
-            @AuthenticationPrincipal User user,
-            @PathVariable Long prId) {
-        // Build a minimal payload and re-enqueue — implementation left as exercise
+    public ResponseEntity<Map<String, String>> triggerReview(@PathVariable Long prId) {
+        reviewJobService.triggerManualReview(prId);
         return ResponseEntity.ok(Map.of("status", "queued"));
+    }
+
+    @PostMapping("/repo/{repoId}/sync")
+    public ResponseEntity<List<PullRequest>> syncPullRequests(@PathVariable Long repoId) {
+        List<PullRequest> prs = reviewJobService.syncPullRequests(repoId);
+        populateReviewStatus(prs);
+        return ResponseEntity.ok(prs);
+    }
+
+    @PostMapping("/repo/{repoId}/auto-review-recent")
+    public ResponseEntity<Map<String, String>> autoReviewRecentPrs(@PathVariable Long repoId) {
+        // 1. Sync PRs from GitHub first
+        reviewJobService.syncPullRequests(repoId);
+
+        // 2. Fetch the top 5 open pull requests sorted by PR number desc
+        List<PullRequest> openPrs = prRepository
+            .findByRepositoryIdAndStateOrderByPrNumberDesc(repoId, "open");
+
+        int count = 0;
+        for (PullRequest pr : openPrs) {
+            if (count >= 5) break;
+            reviewJobService.triggerManualReview(pr.getId());
+            count++;
+        }
+
+        return ResponseEntity.ok(Map.of(
+            "status", "queued",
+            "message", "Queued AI reviews for top " + count + " recent open PRs."
+        ));
+    }
+
+    private void populateReviewStatus(List<PullRequest> prs) {
+        for (PullRequest pr : prs) {
+            reviewRepository.findByPullRequestId(pr.getId())
+                .ifPresent(review -> pr.setReviewStatus(review.getStatus().name()));
+        }
     }
 }

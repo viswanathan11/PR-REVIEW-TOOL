@@ -11,4 +11,6 @@ public interface PullRequestRepository extends JpaRepository<PullRequest, Long> 
     Optional<PullRequest> findByRepositoryIdAndPrNumber(Long repositoryId, Integer prNumber);
 
     List<PullRequest> findByRepositoryId(Long repositoryId);
+
+    List<PullRequest> findByRepositoryIdAndStateOrderByPrNumberDesc(Long repositoryId, String state);
 }

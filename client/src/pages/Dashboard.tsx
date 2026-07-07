@@ -8,7 +8,6 @@ import {
   RefreshCw, 
   Search,
   ArrowLeft,
-  Calendar,
   MessageSquare,
   CheckCircle2,
   XCircle,
@@ -16,7 +15,6 @@ import {
   ChevronRight
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
 import {
   disableWebhook,
@@ -27,6 +25,9 @@ import {
   getReview,
   getReviewComments,
   trackRepository,
+  syncRepoPullRequests,
+  triggerPrReview,
+  triggerAutoReviewForRecentPrs,
   type GithubRepo,
   type Repository,
   type PullRequest,
@@ -35,7 +36,6 @@ import {
 } from "../lib/api";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
   const API_URL = import.meta.env.VITE_API_URL ?? "";
 
@@ -51,6 +51,9 @@ export default function Dashboard() {
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
   const [pullRequests, setPullRequests] = useState<PullRequest[]>([]);
   const [prLoading, setPrLoading] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [triggerLoading, setTriggerLoading] = useState<Record<number, boolean>>({});
 
   const [selectedPr, setSelectedPr] = useState<PullRequest | null>(null);
   const [review, setReview] = useState<Review | null>(null);
@@ -78,6 +81,26 @@ export default function Dashboard() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Auto-refresh the PR list if any PR is in PROCESSING state
+  useEffect(() => {
+    if (!selectedRepo) return;
+    
+    const hasProcessingPr = pullRequests.some(pr => pr.reviewStatus === "PROCESSING");
+    if (!hasProcessingPr) return;
+
+    // Set up a 4-second polling interval to refresh the PR list
+    const interval = setInterval(async () => {
+      try {
+        const updatedPrs = await getRepoPullRequests(selectedRepo.id);
+        setPullRequests(updatedPrs);
+      } catch (error) {
+        console.error("Error polling PR list:", error);
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [pullRequests, selectedRepo]);
 
   const handleLogout = async () => {
     try {
@@ -151,6 +174,49 @@ export default function Dashboard() {
       alert("Failed to fetch Pull Request list.");
     } finally {
       setPrLoading(false);
+    }
+  };
+
+  const handleSyncPrs = async () => {
+    if (!selectedRepo) return;
+    setSyncLoading(true);
+    try {
+      const prs = await syncRepoPullRequests(selectedRepo.id);
+      setPullRequests(prs);
+    } catch (err: any) {
+      console.error("Failed to sync pull requests:", err);
+      alert("Failed to sync Pull Requests: " + err.message);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handleTriggerReview = async (prId: number) => {
+    setTriggerLoading(prev => ({ ...prev, [prId]: true }));
+    try {
+      await triggerPrReview(prId);
+      alert("Review request submitted! Please wait about 10-15 seconds for the AI review to complete, then click the PR to view.");
+    } catch (err: any) {
+      console.error("Failed to trigger review:", err);
+      alert("Failed to trigger review: " + err.message);
+    } finally {
+      setTriggerLoading(prev => ({ ...prev, [prId]: false }));
+    }
+  };
+
+  const handleBulkAutoReview = async () => {
+    if (!selectedRepo) return;
+    setBulkLoading(true);
+    try {
+      const data = await triggerAutoReviewForRecentPrs(selectedRepo.id);
+      alert(data.message);
+      // Reload PRs to reflect updated PROCESSING statuses
+      await handleSelectRepo(selectedRepo);
+    } catch (err: any) {
+      console.error("Failed to trigger bulk auto-review:", err);
+      alert("Failed to trigger bulk auto-review: " + err.message);
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -388,13 +454,36 @@ export default function Dashboard() {
                   <h2 className="text-xl font-bold">{selectedRepo.fullName}</h2>
                   <p className="text-zinc-500 text-xs">{selectedRepo.description || "No description provided."}</p>
                 </div>
-                <button
-                  onClick={() => handleSelectRepo(selectedRepo)}
-                  className="self-start inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${prLoading ? "animate-spin" : ""}`} />
-                  Refresh PRs
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleBulkAutoReview}
+                    disabled={bulkLoading || syncLoading || prLoading}
+                    className="inline-flex items-center gap-2 bg-emerald-950/30 hover:bg-emerald-900/30 border border-emerald-900/50 hover:border-emerald-800 text-emerald-300 hover:text-emerald-200 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                  >
+                    {bulkLoading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Activity className="w-3.5 h-3.5" />
+                    )}
+                    Auto-Review Top 5 PRs
+                  </button>
+                  <button
+                    onClick={handleSyncPrs}
+                    disabled={syncLoading || bulkLoading || prLoading}
+                    className="inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${syncLoading ? "animate-spin" : ""}`} />
+                    Sync PRs from GitHub
+                  </button>
+                  <button
+                    onClick={() => handleSelectRepo(selectedRepo)}
+                    disabled={prLoading || bulkLoading || syncLoading}
+                    className="inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${prLoading ? "animate-spin" : ""}`} />
+                    Refresh List
+                  </button>
+                </div>
               </div>
 
               {prLoading ? (
@@ -404,9 +493,9 @@ export default function Dashboard() {
                 </div>
               ) : pullRequests.length === 0 ? (
                 <div className="text-center py-16 border border-dashed border-zinc-900 rounded-xl">
-                  <p className="text-zinc-500 text-sm mb-1">No reviewed Pull Requests found.</p>
+                  <p className="text-zinc-500 text-sm mb-1">No Pull Requests found.</p>
                   <p className="text-zinc-600 text-xs max-w-sm mx-auto">
-                    Open a Pull Request on GitHub or synchronize commits to trigger an automated code review.
+                    Click "Sync PRs from GitHub" above to fetch existing pull requests for this repository.
                   </p>
                 </div>
               ) : (
@@ -417,6 +506,7 @@ export default function Dashboard() {
                         <th className="p-4">Pull Request</th>
                         <th className="p-4">Branches</th>
                         <th className="p-4">Latest Commit SHA</th>
+                        <th className="p-4">AI Review Status</th>
                         <th className="p-4 text-right">Actions</th>
                       </tr>
                     </thead>
@@ -435,10 +525,30 @@ export default function Dashboard() {
                           </td>
                           <td className="p-4">
                             <code className="text-xs text-zinc-400 font-mono bg-zinc-900/60 px-2 py-1 rounded border border-zinc-800">
-                              {pr.headSha.substring(0, 7)}
+                              {pr.headSha ? pr.headSha.substring(0, 7) : "N/A"}
                             </code>
                           </td>
-                          <td className="p-4 text-right">
+                          <td className="p-4">
+                            {pr.reviewStatus ? (
+                              getStatusBadge(pr.reviewStatus)
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-zinc-900 text-zinc-500 border border-zinc-800 rounded-full text-xs font-semibold">
+                                No Review
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-4 text-right space-x-2">
+                            <button
+                              onClick={() => handleTriggerReview(pr.id)}
+                              disabled={triggerLoading[pr.id]}
+                              className="inline-flex items-center gap-1.5 bg-emerald-950/30 hover:bg-emerald-900/30 border border-emerald-900/50 hover:border-emerald-800 text-emerald-300 hover:text-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                            >
+                              {triggerLoading[pr.id] ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                "Trigger AI Review"
+                              )}
+                            </button>
                             <button
                               onClick={() => handleSelectPr(pr)}
                               className="inline-flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer"

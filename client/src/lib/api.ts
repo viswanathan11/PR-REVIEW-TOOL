@@ -48,6 +48,7 @@ export interface PullRequest {
     state: string;
     githubUrl: string;
     createdAt: string;
+    reviewStatus?: "PENDING" | "PROCESSING" | "DONE" | "FAILED" | null;
 }
 
 // 1. Fetch tracked repositories from database
@@ -122,5 +123,32 @@ export async function getRepoPullRequests(repoId: number): Promise<PullRequest[]
         credentials: "include",
     });
     if (!res.ok) throw new Error("Failed to fetch PR list");
+    return res.json();
+}
+
+export async function syncRepoPullRequests(repoId: number): Promise<PullRequest[]> {
+    const res = await fetch(`${API_URL}/api/reviews/repo/${repoId}/sync`, {
+        method: "POST",
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error("Failed to sync Pull Requests");
+    return res.json();
+}
+
+export async function triggerPrReview(prId: number): Promise<{ status: string }> {
+    const res = await fetch(`${API_URL}/api/reviews/${prId}/trigger`, {
+        method: "POST",
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error("Failed to trigger review");
+    return res.json();
+}
+
+export async function triggerAutoReviewForRecentPrs(repoId: number): Promise<{ status: string; message: string }> {
+    const res = await fetch(`${API_URL}/api/reviews/repo/${repoId}/auto-review-recent`, {
+        method: "POST",
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error("Failed to trigger bulk auto-review");
     return res.json();
 }
