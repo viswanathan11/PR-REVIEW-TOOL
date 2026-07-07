@@ -56,9 +56,9 @@ public class SecurityConfig {
                 // 2. Apply our CORS configurations
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 3. Make session management stateless (we are using JWTs)
+                // 3. Allow sessions for OAuth2 login flow (JWT still used for API auth)
                 .sessionManagement(sm -> sm
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 // 4. Define route permissions
                 .authorizeHttpRequests(auth -> auth

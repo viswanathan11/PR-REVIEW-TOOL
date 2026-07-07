@@ -80,7 +80,7 @@ public class AIReviewService {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         // Call Google Gemini API
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" 
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" 
             + props.getAi().getGeminiApiKey();
 
         ResponseEntity<Map> response = restTemplate.postForEntity(

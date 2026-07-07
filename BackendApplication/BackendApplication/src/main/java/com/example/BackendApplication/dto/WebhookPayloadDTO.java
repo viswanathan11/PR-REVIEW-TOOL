@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WebhookPayloadDTO {
     private String action;
+    @JsonProperty("pull_request")
     private PullRequestData pullRequest;
     private RepositoryData repository;
 

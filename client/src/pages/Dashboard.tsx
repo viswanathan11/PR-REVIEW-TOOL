@@ -37,7 +37,7 @@ import {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
+  const API_URL = import.meta.env.VITE_API_URL ?? "";
 
   // Data fetching states
   const [trackedRepos, setTrackedRepos] = useState<Repository[]>([]);

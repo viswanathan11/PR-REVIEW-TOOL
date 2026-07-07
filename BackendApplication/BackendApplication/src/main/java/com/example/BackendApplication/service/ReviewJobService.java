@@ -185,6 +185,152 @@ public class ReviewJobService {
         }
     }
 
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public List<PullRequest> syncPullRequests(Long repoId) {
+        Repository repo = repositoryRepo.findById(repoId)
+            .orElseThrow(() -> new RuntimeException("Repository not found: " + repoId));
+        String userToken = repo.getUser().getAccessToken();
+        List<Map<String, Object>> gitHubPrs = githubService.getOpenPullRequests(repo.getFullName(), userToken);
+
+        if (gitHubPrs == null) return List.of();
+
+        return gitHubPrs.stream().map(prMap -> {
+            int prNumber = (Integer) prMap.get("number");
+            Optional<PullRequest> existingPrOpt = prRepository.findByRepositoryIdAndPrNumber(repoId, prNumber);
+            
+            PullRequest pr = existingPrOpt.orElseGet(() -> {
+                PullRequest newPr = new PullRequest();
+                newPr.setRepository(repo);
+                newPr.setPrNumber(prNumber);
+                newPr.setCreatedAt(Instant.now());
+                return newPr;
+            });
+
+            pr.setTitle((String) prMap.get("title"));
+            pr.setState((String) prMap.get("state"));
+            pr.setGithubUrl((String) prMap.get("html_url"));
+            
+            Map<String, Object> userMap = (Map<String, Object>) prMap.get("user");
+            if (userMap != null) {
+                pr.setAuthor((String) userMap.get("login"));
+            }
+
+            Map<String, Object> headMap = (Map<String, Object>) prMap.get("head");
+            if (headMap != null) {
+                pr.setHeadBranch((String) headMap.get("ref"));
+                pr.setHeadSha((String) headMap.get("sha"));
+            }
+
+            Map<String, Object> baseMap = (Map<String, Object>) prMap.get("base");
+            if (baseMap != null) {
+                pr.setBaseBranch((String) baseMap.get("ref"));
+            }
+
+            return prRepository.save(pr);
+        }).collect(Collectors.toList());
+    }
+
+    @Async("reviewExecutor")
+    @Transactional
+    public void triggerManualReview(Long prId) {
+        PullRequest pr = prRepository.findById(prId)
+            .orElseThrow(() -> new RuntimeException("Pull request not found: " + prId));
+        Repository repo = pr.getRepository();
+        String userToken = repo.getUser().getAccessToken();
+        String repoFullName = repo.getFullName();
+        int prNumber = pr.getPrNumber();
+        String incomingSha = pr.getHeadSha();
+
+        String lockKey = "review:lock:" + repoFullName + ":" + prNumber;
+        Boolean acquired = redisTemplate.opsForValue()
+            .setIfAbsent(lockKey, "processing", Duration.ofMinutes(10));
+        if (!Boolean.TRUE.equals(acquired)) {
+            log.info("Review already in progress for {}/#{}", repoFullName, prNumber);
+            return;
+        }
+
+        Review review = null;
+        try {
+            Optional<Review> lastReview = reviewRepository
+                .findFirstByPullRequestIdAndStatusOrderByCreatedAtDesc(pr.getId(), ReviewStatus.DONE);
+            if (lastReview.isPresent()) {
+                Review prevReview = lastReview.get();
+                if (prevReview.getPullRequest().getHeadSha().equals(incomingSha)) {
+                    log.info("PR {}/#{} already reviewed for commit SHA: {}. Skipping duplicate review.", 
+                        repoFullName, prNumber, incomingSha);
+                    return;
+                }
+            }
+
+            review = new Review();
+            review.setPullRequest(pr);
+            review.setStatus(ReviewStatus.PROCESSING);
+            review.setModelUsed("claude-3-5-sonnet");
+            review.setCreatedAt(Instant.now());
+            review = reviewRepository.save(review);
+
+            String diff = githubService.fetchPrDiff(repoFullName, prNumber, userToken);
+            if (diff == null || diff.isBlank()) {
+                throw new RuntimeException("Empty git diff received from GitHub");
+            }
+
+            ReviewResultDTO result = aiReviewService.analyzeCode(diff);
+
+            if (result.getIssues() != null && !result.getIssues().isEmpty()) {
+                Review finalReview = review;
+                List<ReviewComment> comments = result.getIssues().stream()
+                    .filter(i -> i.getFile() != null && i.getComment() != null)
+                    .map(issue -> {
+                        ReviewComment comment = new ReviewComment();
+                        comment.setReview(finalReview);
+                        comment.setFilePath(issue.getFile());
+                        comment.setLineNumber(issue.getLine());
+                        comment.setSeverity(issue.getSeverity() != null ? issue.getSeverity() : "INFO");
+                        comment.setComment(issue.getComment());
+                        comment.setSuggestion(issue.getSuggestion());
+                        comment.setCreatedAt(Instant.now());
+                        return comment;
+                    })
+                    .collect(Collectors.toList());
+                commentRepository.saveAll(comments);
+
+                for (ReviewComment c : comments) {
+                    if (c.getLineNumber() != null && c.getLineNumber() > 0) {
+                        githubService.postReviewComment(
+                            repoFullName, prNumber, incomingSha,
+                            c.getFilePath(), c.getLineNumber(),
+                            formatGitHubComment(c), userToken
+                        );
+                    }
+                }
+
+                githubService.postReviewSummary(repoFullName, prNumber, formatSummaryComment(result), userToken);
+            }
+
+            review.setStatus(ReviewStatus.DONE);
+            review.setReviewSummary(result.getSummary());
+            review.setOverallScore(result.getOverallScore());
+            review.setIssuesFound(result.getIssues() != null ? result.getIssues().size() : 0);
+            review.setPostedToGithub(true);
+            review.setCompletedAt(Instant.now());
+            reviewRepository.save(review);
+
+            log.info("Manual review completed successfully for {}/#{}", repoFullName, prNumber);
+
+        } catch (Exception e) {
+            log.error("Manual review job failed for {}/#{}: {}", repoFullName, prNumber, e.getMessage(), e);
+            if (review != null) {
+                review.setStatus(ReviewStatus.FAILED);
+                review.setErrorMessage(e.getMessage());
+                review.setCompletedAt(Instant.now());
+                reviewRepository.save(review);
+            }
+        } finally {
+            redisTemplate.delete(lockKey);
+        }
+    }
+
     private String formatGitHubComment(ReviewComment c) {
         String emoji = switch (c.getSeverity()) {
             case "BUG"         -> "🐛";

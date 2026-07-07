@@ -35,10 +35,10 @@ public class ReviewComment {
     @Column(name = "severity", nullable = false, length = 20)
     private String severity;
 
-    @Column(name = "comment", nullable = false)
+    @Column(name = "comment", nullable = false, columnDefinition = "TEXT")
     private String comment;
 
-    @Column(name = "suggestion")
+    @Column(name = "suggestion", columnDefinition = "TEXT")
     private String suggestion;
 
     @Column(name = "created_at", nullable = false, updatable = false)

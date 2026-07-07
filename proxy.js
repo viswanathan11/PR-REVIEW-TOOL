@@ -9,9 +9,18 @@ const server = http.createServer((req, res) => {
     const targetBase = isBackend ? BACKEND_URL : FRONTEND_URL;
     const targetUrl = new URL(req.url, targetBase);
 
+    const headers = { ...req.headers };
+    // Tell Spring the original protocol/host so it constructs correct OAuth2 redirect_uri
+    if (!headers['x-forwarded-proto']) {
+        headers['x-forwarded-proto'] = 'https';
+    }
+    if (!headers['x-forwarded-for']) {
+        headers['x-forwarded-for'] = req.socket.remoteAddress;
+    }
+
     const proxyReq = http.request(targetUrl, {
         method: req.method,
-        headers: req.headers
+        headers: headers
     }, (proxyRes) => {
         res.writeHead(proxyRes.statusCode, proxyRes.headers);
         proxyRes.pipe(res, { end: true });
