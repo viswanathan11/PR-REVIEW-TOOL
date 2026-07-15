@@ -24,15 +24,15 @@ public class AuthController {
     @GetMapping("/logout")
     public ResponseEntity<Void> logOut(jakarta.servlet.http.HttpServletResponse response){
         //Create a cookie with the same name, null value and 0 lifespan
-
         jakarta.servlet.http.Cookie cookie=new jakarta.servlet.http.Cookie("token",null);
-
         cookie.setHttpOnly(true);
-        cookie.setSecure( false);//True in production
+        cookie.setSecure(true); // Must be true in production/HTTPS
         cookie.setPath("/");
-        cookie.setMaxAge(0);//Tells browser to delte this cookie immedidately!
-
+        cookie.setMaxAge(0); // Tells browser to delete this cookie immediately!
         response.addCookie(cookie);
+
+        // Explicitly set SameSite=None and Secure via header for cross-site cookie deletion
+        response.setHeader("Set-Cookie", "token=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0");
 
         return ResponseEntity.ok().build();
     }
