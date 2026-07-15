@@ -1,6 +1,5 @@
 import { Activity, AlertCircle, LayoutDashboard, Loader2, LogOut, Power, RefreshCw, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
 import {
   disableWebhook,
@@ -13,7 +12,6 @@ import {
 } from "../lib/api";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
 
