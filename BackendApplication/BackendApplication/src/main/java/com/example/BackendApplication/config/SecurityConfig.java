@@ -37,7 +37,6 @@ public class SecurityConfig {
     private final AppProperties props;
     private final OAuth2AuthorizedClientService authorizedClientService;
 
-    // Standard constructor injection (No Lombok!)
     public SecurityConfig(JwtService jwtService, UserService userService, AppProperties props,
             OAuth2AuthorizedClientService authorizedClientService) {
         this.jwtService = jwtService;
