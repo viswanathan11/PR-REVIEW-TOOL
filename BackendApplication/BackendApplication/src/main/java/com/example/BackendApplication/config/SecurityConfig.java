@@ -56,9 +56,9 @@ public class SecurityConfig {
                 // 2. Apply our CORS configurations
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 3. Make session management stateless (we are using JWTs)
+                // 3. Allow sessions for OAuth2 login flow (JWT still used for API auth)
                 .sessionManagement(sm -> sm
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 // 4. Define route permissions
                 .authorizeHttpRequests(auth -> auth
@@ -87,12 +87,15 @@ public class SecurityConfig {
                     // 1. Create the HttpOnly Cookie
                     jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("token", jwt);
                     cookie.setHttpOnly(true);
-                    cookie.setSecure(false); // Set to true in production (HTTPS only)
+                    cookie.setSecure(true); // Required for HTTPS (ngrok)
                     cookie.setPath("/");
                     cookie.setMaxAge(props.getJwt().getExpiryHours() * 3600); // 3600 seconds in an hour
 
                     // 2. Add the cookie to the HTTP response
                     response.addCookie(cookie);
+                    // Also set SameSite=None so cookie works across the ngrok tunnel
+                    response.setHeader("Set-Cookie",
+                        "token=" + jwt + "; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=" + (props.getJwt().getExpiryHours() * 3600));
 
                     // 3. Redirect the user straight to the frontend dashboard!
                     response.sendRedirect(props.getFrontendUrl() + "/dashboard");

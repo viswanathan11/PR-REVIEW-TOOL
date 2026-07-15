@@ -1,6 +1,6 @@
 
 export default function LoginPage() {
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
+    const API_URL = import.meta.env.VITE_API_URL ?? "";
 
     // Point the login directly to Spring Boot's OAuth entry point
     const loginUrl = `${API_URL}/oauth2/authorization/github`;

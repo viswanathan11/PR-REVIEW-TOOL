@@ -29,7 +29,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   const checkAuth = async () => {
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
+    const API_URL = import.meta.env.VITE_API_URL ?? "";
     try {
       const res = await fetch(`${API_URL}/api/auth/me`, {
         credentials: "include", // Tells browser to send the HttpOnly cookie!

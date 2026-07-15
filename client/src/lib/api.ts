@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
+const API_URL = import.meta.env.VITE_API_URL !== undefined && import.meta.env.VITE_API_URL !== "" 
+    ? import.meta.env.VITE_API_URL 
+    : "";
 
 export interface Repository {
     id: number;
@@ -16,6 +18,36 @@ export interface GithubRepo {
     full_name: string;
     description: string | null;
     private: boolean;
+}
+export interface Review {
+    id: number;
+    status: "PENDING" | "PROCESSING" | "DONE" | "FAILED";
+    modelUsed: string;
+    reviewSummary: string | null;
+    overallScore: number | null;
+    issuesFound: number;
+    errorMessage: string | null;
+    completedAt: string | null;
+}
+export interface ReviewComment {
+    id: number;
+    filePath: string;
+    lineNumber: number;
+    severity: "BUG" | "SECURITY" | "PERFORMANCE" | "STYLE" | "INFO";
+    comment: string;
+    suggestion: string | null;
+}
+export interface PullRequest {
+    id: number;
+    prNumber: number;
+    title: string;
+    author: string;
+    baseBranch: string;
+    headBranch: string;
+    headSha: string;
+    state: string;
+    githubUrl: string;
+    createdAt: string;
 }
 
 // 1. Fetch tracked repositories from database
@@ -67,5 +99,28 @@ export async function disableWebhook(repoId: number): Promise<Repository> {
         credentials: "include",
     });
     if (!res.ok) throw new Error("Failed to disable webhook");
+    return res.json();
+}
+export async function getReview(prId: number): Promise<Review> {
+    const res = await fetch(`${API_URL}/api/reviews/${prId}`, {
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error("Failed to fetch review");
+    return res.json();
+}
+// 7. Fetch all inline comments generated for a review
+export async function getReviewComments(prId: number): Promise<ReviewComment[]> {
+    const res = await fetch(`${API_URL}/api/reviews/${prId}/comments`, {
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error("Failed to fetch review comments");
+    return res.json();
+}
+
+export async function getRepoPullRequests(repoId: number): Promise<PullRequest[]> {
+    const res = await fetch(`${API_URL}/api/reviews/repo/${repoId}`, {
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error("Failed to fetch PR list");
     return res.json();
 }

@@ -113,6 +113,16 @@ public class GitHubService {
                 void.class);
     }
 
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getOpenPullRequests(String repoFullName, String token) {
+        ResponseEntity<List> response = restTemplate.exchange(
+                "https://api.github.com/repos/" + repoFullName + "/pulls?state=open",
+                HttpMethod.GET,
+                new HttpEntity<>(headers(token)),
+                List.class);
+        return (List<Map<String, Object>>) response.getBody();
+    }
+
     public String fetchPrDiff(String repoFullName, int prNumber, String token) {
         HttpHeaders h = headers(token);
 
@@ -141,7 +151,7 @@ public class GitHubService {
 
         try {
             restTemplate.postForEntity(
-                    "https://api.github.com/repos/" + repoFUllName + "/pulls" + prNumber + "/comments",
+                    "https://api.github.com/repos/" + repoFUllName + "/pulls/" + prNumber + "/comments",
                     new HttpEntity<>(payload, headers(token)),
                     Void.class);
         } catch (Exception e) {
@@ -150,7 +160,7 @@ public class GitHubService {
         }
     };
 
-    public void postReviewSUmmary(String repoFUllName,int prNumber,String body,String token){
+       public void postReviewSummary(String repoFUllName, int prNumber, String body, String token){
         Map<String,Object> payload = Map.of("body",body);
         restTemplate.postForEntity(
             "https://api.github.com/repos/"+repoFUllName+"/issues/"+prNumber+"/comments",
@@ -158,5 +168,4 @@ public class GitHubService {
             Void.class
         );
     }
-
 }
