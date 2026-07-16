@@ -30,13 +30,13 @@ public class Review {
     private PullRequest pullRequest;
     
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, columnDefinition = "review_status")
+    @Column(name = "status", nullable = false, length = 50)
     private ReviewStatus status;
 
     @Column(name = "model_used", length = 100)
     private String modelUsed;
 
-    @Column(name = "review_summary")
+    @Column(name = "review_summary", columnDefinition = "TEXT")
     private String reviewSummary;
 
     @Column(name = "overall_score")
@@ -53,7 +53,7 @@ public class Review {
     @Column(name = "posted_to_github")
     private Boolean postedToGithub;
 
-    @Column(name = "error_message")
+    @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
     @Column(name = "created_at", nullable = false, updatable = false)
